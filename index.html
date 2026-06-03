@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kumon Brookswood — Parent Booking Portal</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff;
+    --bg2: #f7f7f5;
+    --bg3: #f0eeea;
+    --text: #1a1a18;
+    --text2: #6b6b67;
+    --text3: #9b9b96;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.22);
+    --blue-bg: #E6F1FB;
+    --blue-text: #0C447C;
+    --blue-mid: #185FA5;
+    --blue-border: #85B7EB;
+    --green-bg: #EAF3DE;
+    --green-text: #3B6D11;
+    --green-border: #97C459;
+    --red-bg: #FCEBEB;
+    --red-text: #A32D2D;
+    --red-border: #F09595;
+    --amber-bg: #FAEEDA;
+    --amber-text: #633806;
+    --amber-border: #EF9F27;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1e1c;
+      --bg2: #252523;
+      --bg3: #2c2c2a;
+      --text: #f0eeea;
+      --text2: #a0a09a;
+      --text3: #6b6b66;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.2);
+      --blue-bg: #0c2d4a;
+      --blue-text: #85B7EB;
+      --blue-mid: #378ADD;
+      --blue-border: #185FA5;
+      --green-bg: #1a2e0d;
+      --green-text: #97C459;
+      --green-border: #3B6D11;
+      --red-bg: #2e0f0f;
+      --red-text: #F09595;
+      --red-border: #A32D2D;
+      --amber-bg: #2e1e08;
+      --amber-text: #FAC775;
+      --amber-border: #854F0B;
+    }
+  }
+
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg3); color: var(--text); min-height: 100vh; line-height: 1.5; }
+  .page { max-width: 560px; margin: 0 auto; padding: 1rem 1rem 3rem; }
+
+  /* Brand */
+  .brand { text-align: center; padding: 2rem 0 1.5rem; }
+  .brand-badge { display: inline-flex; align-items: center; gap: 8px; background: var(--blue-bg); color: var(--blue-text); padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+  .brand h1 { font-size: 24px; font-weight: 600; color: var(--text); }
+  .brand p { font-size: 14px; color: var(--text2); margin-top: 4px; }
+
+  /* Cards */
+  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+  .card-hd { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+  .card-hd i { font-size: 18px; color: var(--text2); }
+
+  /* Forms */
+  .field { margin-bottom: 14px; }
+  .field label { font-size: 12px; font-weight: 600; color: var(--text2); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .field input, .field select {
+    width: 100%; font-size: 14px; padding: 10px 12px;
+    border: 0.5px solid var(--border2); border-radius: var(--radius);
+    background: var(--bg); color: var(--text); transition: border-color 0.15s;
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--blue-mid); box-shadow: 0 0 0 3px rgba(55,138,221,0.15); }
+  .field input[readonly] { opacity: 0.6; cursor: default; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* Buttons */
+  .btn { width: 100%; padding: 11px 16px; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text); transition: background 0.12s, border-color 0.12s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  .btn:hover { background: var(--bg2); }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-primary { background: var(--blue-mid); color: #fff; border-color: var(--blue-mid); }
+  .btn-primary:hover { background: var(--blue-text); border-color: var(--blue-text); }
+  .btn-danger { background: var(--red-bg); color: var(--red-text); border-color: var(--red-border); }
+  .btn-danger:hover { background: #f7c1c1; }
+  .btn-sm { width: auto; padding: 6px 12px; font-size: 12px; }
+
+  /* Alerts */
+  .alert { padding: 10px 14px; border-radius: var(--radius); font-size: 13px; margin-bottom: 12px; display: flex; gap: 8px; align-items: flex-start; }
+  .alert i { margin-top: 1px; flex-shrink: 0; }
+  .alert-info { background: var(--blue-bg); color: var(--blue-text); border: 0.5px solid var(--blue-border); }
+  .alert-warn { background: var(--amber-bg); color: var(--amber-text); border: 0.5px solid var(--amber-border); }
+  .alert-err { background: var(--red-bg); color: var(--red-text); border: 0.5px solid var(--red-border); }
+  .alert-ok { background: var(--green-bg); color: var(--green-text); border: 0.5px solid var(--green-border); }
+
+  /* Rows */
+  .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 0.5px solid var(--border); font-size: 13px; gap: 8px; }
+  .row:last-child { border-bottom: none; }
+  .row-label { color: var(--text2); flex-shrink: 0; }
+  .row-val { font-weight: 600; color: var(--text); text-align: right; }
+
+  /* Tabs */
+  .tab-bar { display: flex; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1rem; background: var(--bg2); }
+  .tab { flex: 1; padding: 11px 8px; text-align: center; font-size: 13px; cursor: pointer; color: var(--text2); transition: all .12s; border-right: 0.5px solid var(--border); font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 5px; }
+  .tab:last-child { border-right: none; }
+  .tab.active { background: var(--bg); color: var(--text); font-weight: 600; }
+
+  /* Pills */
+  .pill { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+  .pill-blue { background: var(--blue-bg); color: var(--blue-text); }
+  .pill-green { background: var(--green-bg); color: var(--green-text); }
+  .pill-red { background: var(--red-bg); color: var(--red-text); }
+  .pill-amber { background: var(--amber-bg); color: var(--amber-text); }
+
+  /* Avatar */
+  .avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--blue-bg); color: var(--blue-text); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+
+  /* Student rows */
+  .student-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 0.5px solid var(--border); }
+  .student-row:last-child { border-bottom: none; }
+
+  /* Booking chip */
+  .chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; background: var(--bg2); color: var(--text2); padding: 3px 8px; border-radius: 6px; margin: 2px; border: 0.5px solid var(--border); }
+
+  /* Slots */
+  .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; margin: 10px 0; }
+  .slot { border: 0.5px solid var(--border); border-radius: var(--radius); padding: 10px 8px; cursor: pointer; text-align: center; transition: all .12s; background: var(--bg); }
+  .slot:hover:not(.full) { border-color: var(--blue-border); background: var(--blue-bg); }
+  .slot.sel { background: var(--blue-bg); border: 2px solid var(--blue-mid); }
+  .slot.full { opacity: 0.4; cursor: not-allowed; background: var(--bg2); }
+  .slot-t { font-size: 13px; font-weight: 600; color: var(--text); }
+  .slot-a { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .slot.sel .slot-t, .slot.sel .slot-a { color: var(--blue-text); }
+
+  /* Day buttons */
+  .day-btn { width: 100%; padding: 12px 16px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); font-size: 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; transition: all .12s; font-weight: 500; }
+  .day-btn:hover:not(:disabled) { background: var(--bg2); }
+  .day-btn.sel { background: var(--blue-bg); border-color: var(--blue-border); color: var(--blue-text); }
+  .day-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* Divider */
+  hr { border: none; border-top: 0.5px solid var(--border); margin: 14px 0; }
+
+  .muted { color: var(--text2); font-size: 13px; }
+  .center { text-align: center; }
+  .mt8 { margin-top: 8px; }
+  .mt12 { margin-top: 12px; }
+  .empty-state { text-align: center; padding: 2.5rem 1rem; }
+  .empty-state i { font-size: 40px; color: var(--text3); }
+  .empty-state p { margin-top: 10px; color: var(--text2); font-size: 14px; }
+  .empty-state .btn { margin-top: 14px; width: auto; padding: 10px 24px; }
+
+  #msg { min-height: 0; }
+
+  @media (max-width: 480px) {
+    .g2 { grid-template-columns: 1fr; }
+    .tab { font-size: 12px; padding: 10px 4px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="brand">
+    <div style="display:flex;justify-content:center;margin-bottom:12px">
+      <img src="centre.jpg"
+           alt="Kumon Brookswood Centre"
+           style="width:100%;max-height:200px;object-fit:cover;object-position:center 40%;border-radius:var(--radius-lg);border:0.5px solid var(--border)" />
+    </div>
+    <div style="display:flex;justify-content:center;margin-bottom:4px">
+      <img src="kumon-logo.png"
+           alt="Kumon logo"
+           style="height:60px;width:auto;border-radius:8px" />
+    </div>
+    <h1>Brookswood Centre</h1>
+    <p style="margin-top:6px">Book and manage your child's weekly sessions</p>
+    <div style="display:inline-flex;flex-direction:column;gap:4px;margin-top:10px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 16px;text-align:left">
+      <div style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text2)">
+        <i class="ti ti-map-pin" style="font-size:15px;color:var(--blue-mid)"></i>
+        <span>4043 200 St, Langley, BC V3A 1K8</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text2)">
+        <i class="ti ti-phone" style="font-size:15px;color:var(--blue-mid)"></i>
+        <a href="tel:+16042452121" style="color:var(--text2);text-decoration:none">(604) 245-2121</a>
+      </div>
+    </div>
+  </div>
+  <div id="root"></div>
+</div>
+
+<script>
+/* ── CONFIG ── Change these to match your centre */
+const CENTRE_NAME = "Kumon Brookswood";
+const SUBJECTS = ["Mathematics", "English"];
+const EARLY_LEVELS = ['early'];
+const STD_LEVELS   = ['main'];
+const MAX_EARLY = 6;
+const MAX_STD   = 15;
+const SCHEDULE = {
+  Monday:   { hours: ['2:30','3:00','3:30','4:00','4:30','5:00','5:30'], suffix: 'PM' },
+  Thursday: { hours: ['2:30','3:00','3:30','4:00','4:30','5:00','5:30'], suffix: 'PM' },
+  Friday:   { hours: ['2:30','3:00','3:30','4:00','4:30','5:00','5:30'], suffix: 'PM' },
+  Saturday: { hours: ['9:00','9:30','10:00','10:30','11:00','11:30'],    suffix: 'AM' }
+};
+const DAY_ORDER = { Monday:0, Thursday:1, Friday:2, Saturday:3 };
+const CANCEL_NOTICE_DAYS = 3;
+const ADMIN_PASSWORD = "Kumon2024!";
+/* ── END CONFIG ── */
+
+const isEarly = lvl => lvl === 'early';
+const classLabel = lvl => isEarly(lvl) ? 'Early Learner' : 'Main class';
+const slotDur = lvl => isEarly(lvl) ? 30 : 45;
+const slotMax = lvl => isEarly(lvl) ? MAX_EARLY : MAX_STD;
+const initials = n => n.trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+const fmtTime  = (h, day) => h + ' ' + (day && SCHEDULE[day] ? SCHEDULE[day].suffix : (parseInt(h) < 9 ? 'AM' : 'PM'));
+const availHours = (day, lvl) => {
+  const hours = SCHEDULE[day].hours;
+  if (isEarly(lvl)) return hours;
+  return hours.filter(h => {
+    const [hr, mn] = h.split(':').map(Number);
+    const suffix = SCHEDULE[day].suffix;
+    const base = suffix === 'AM' ? 0 : 12;
+    const startMin = (hr === 12 ? 12 : hr + (suffix === 'PM' && hr !== 12 ? 12 : 0)) * 60 + mn;
+    const closeMin = suffix === 'AM' ? 12*60 : 18*60;
+    return startMin + 45 <= closeMin;
+  });
+};
+const uid      = () => Math.random().toString(36).slice(2,9);
+
+/* ── Storage ── localStorage for real persistence */
+const LS = {
+  get: k => { try { const v=localStorage.getItem(k); return v?JSON.parse(v):null; } catch(e){return null;} },
+  set: (k,v) => { try { localStorage.setItem(k,JSON.stringify(v)); } catch(e){} },
+  del: k => { try { localStorage.removeItem(k); } catch(e){} }
+};
+
+function loadCap() {
+  let c = LS.get('kum_cap');
+  if (!c) {
+    c = {};
+    Object.keys(SCHEDULE).forEach(d => {
+      c[d] = {};
+      SCHEDULE[d].hours.forEach(h => { c[d][h] = {early:0, std:0}; });
+    });
+    LS.set('kum_cap', c);
+  }
+  return c;
+}
+
+let S = { view:'login', user:null, cap:loadCap(), tab:'bookings', adminTab:'overview', bookFlow:null, pendingEmail:'', confirmRemove:null };
+
+/* ── Render engine ── */
+const root = () => document.getElementById('root');
+function render() { root().innerHTML = VIEWS[S.view](); attachEvents(); }
+function go(patch) { Object.assign(S,patch); render(); }
+
+/* ── Views ── */
+const VIEWS = {
+
+  login: () => `
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-mail"></i> Sign in</div>
+      <p class="muted" style="margin-bottom:14px">Enter your email to sign in. First time? We'll create your account automatically.</p>
+      <div class="field"><label>Email address</label><input id="em" type="email" placeholder="your@email.com" autocomplete="email" /></div>
+      <div id="msg"></div>
+      <button class="btn btn-primary" onclick="handleLogin()">Continue <i class="ti ti-arrow-right"></i></button>
+    </div>
+    <p class="muted" style="text-align:center;margin-top:10px"><span class="link" onclick="go({view:'adminLogin'})"><i class="ti ti-shield-lock" style="font-size:13px"></i> Centre admin login</span></p>`,
+
+  register: () => `
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-user-plus"></i> Create your account</div>
+      <p class="muted" style="margin-bottom:14px">Welcome! Just a few details to set up your parent account.</p>
+      <div class="g2">
+        <div class="field"><label>First name</label><input id="fn" placeholder="Sarah" autocomplete="given-name" /></div>
+        <div class="field"><label>Last name</label><input id="ln" placeholder="Chen" autocomplete="family-name" /></div>
+      </div>
+      <div class="field"><label>Phone number</label><input id="ph" type="tel" placeholder="+1 604 000 0000" autocomplete="tel" /></div>
+      <div class="field"><label>Email</label><input id="em2" value="${S.pendingEmail}" readonly /></div>
+      <div id="msg"></div>
+      <button class="btn btn-primary mt12" onclick="handleRegister()"><i class="ti ti-check"></i> Create account</button>
+      <button class="btn mt8" onclick="go({view:'login'})"><i class="ti ti-arrow-left"></i> Back</button>
+    </div>`,
+
+  dashboard: () => {
+    const u = S.user;
+    return `
+    <div class="card" style="display:flex;align-items:center;gap:12px">
+      <div class="avatar">${initials(u.firstName+' '+u.lastName)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:15px">Hi, ${u.firstName}!</div>
+        <div style="font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.email}</div>
+      </div>
+      <button class="btn btn-sm" onclick="signOut()">Sign out</button>
+    </div>
+    <div class="tab-bar">
+      <div class="tab ${S.tab==='bookings'?'active':''}" onclick="go({tab:'bookings'})"><i class="ti ti-calendar"></i> Bookings</div>
+      <div class="tab ${S.tab==='students'?'active':''}" onclick="go({tab:'students'})"><i class="ti ti-users"></i> Students</div>
+      <div class="tab ${S.tab==='account'?'active':''}" onclick="go({tab:'account'})"><i class="ti ti-settings"></i> Account</div>
+    </div>
+    ${S.tab==='bookings' ? renderBookings(u) : ''}
+    ${S.tab==='students' ? renderStudents(u) : ''}
+    ${S.tab==='account'  ? renderAccount(u)  : ''}`;
+  },
+
+  addStudent: () => `
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-user-plus"></i> Add a student</div>
+      <div class="g2">
+        <div class="field"><label>First name</label><input id="sfn" placeholder="Alex" /></div>
+        <div class="field"><label>Last name</label><input id="sln" placeholder="Chen" /></div>
+      </div>
+      <div class="field">
+        <label>Kumon level</label>
+        <select id="slvl">
+          <option value="">-- Select class type --</option>
+          <option value="early">Early Learner — 30 min slot (Age 3–9)</option>
+          <option value="main">Main class — 45 min slot (Age 10+)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Subject</label>
+        <select id="ssubj">${SUBJECTS.map(s=>`<option>${s}</option>`).join('')}</select>
+      </div>
+      <div id="msg"></div>
+      <button class="btn btn-primary mt8" onclick="handleAddStudent()"><i class="ti ti-plus"></i> Add student</button>
+      <button class="btn mt8" onclick="go({view:'dashboard',tab:'students'})">Cancel</button>
+    </div>`,
+
+  bookSlots: () => {
+    const bf = S.bookFlow;
+    const steps = ['Pick day 1','Pick time','Pick day 2','Pick time','Review'];
+    const stepIdx = bf.step - 1;
+    const progressW = Math.round((bf.step / 5) * 100);
+    return `
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-calendar-plus"></i> Book sessions — ${bf.student.firstName}</div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:6px">
+        <span>${steps[stepIdx]}</span><span>Step ${bf.step} of 5</span>
+      </div>
+      <div style="height:4px;background:var(--bg2);border-radius:2px;margin-bottom:16px">
+        <div style="height:4px;background:var(--blue-mid);border-radius:2px;width:${progressW}%;transition:width .3s"></div>
+      </div>
+      ${bf.step===1 ? renderDayPicker(1) : ''}
+      ${bf.step===2 ? renderSlotPicker(1) : ''}
+      ${bf.step===3 ? renderDayPicker(2) : ''}
+      ${bf.step===4 ? renderSlotPicker(2) : ''}
+      ${bf.step===5 ? renderReview() : ''}
+      <div id="msg"></div>
+    </div>`;
+  },
+
+
+  adminLogin: () => `
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-shield-lock"></i> Admin login</div>
+      <p class="muted" style="margin-bottom:14px">For Kumon Brookswood Centre staff only.</p>
+      <div class="field"><label>Admin password</label><input id="apw" type="password" placeholder="Enter password" /></div>
+      <div id="msg"></div>
+      <button class="btn btn-primary" onclick="handleAdminLogin()"><i class="ti ti-lock-open"></i> Sign in as admin</button>
+      <button class="btn mt8" onclick="go({view:'login'})"><i class="ti ti-arrow-left"></i> Back</button>
+    </div>`,
+
+  admin: () => {
+    const allBookings = getAllBookings();
+    const allParents  = getAllParents();
+    return `
+    <div class="card" style="display:flex;align-items:center;gap:12px">
+      <div class="avatar" style="background:var(--amber-bg);color:var(--amber-text)"><i class="ti ti-shield" style="font-size:18px"></i></div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:15px">Admin — Kumon Brookswood Centre</div>
+        <div style="font-size:12px;color:var(--text2)">${allBookings.length} active bookings · ${allParents.length} registered families</div>
+      </div>
+      <button class="btn btn-sm" onclick="go({view:'login',user:null})">Sign out</button>
+    </div>
+    <div class="tab-bar">
+      <div class="tab ${S.adminTab==='overview'?'active':''}" onclick="go({adminTab:'overview'})"><i class="ti ti-layout-dashboard"></i> Overview</div>
+      <div class="tab ${S.adminTab==='bookings'?'active':''}" onclick="go({adminTab:'bookings'})"><i class="ti ti-calendar"></i> Bookings</div>
+      <div class="tab ${S.adminTab==='slots'?'active':''}" onclick="go({adminTab:'slots'})"><i class="ti ti-table"></i> Slots</div>
+      <div class="tab ${S.adminTab==='families'?'active':''}" onclick="go({adminTab:'families'})"><i class="ti ti-users"></i> Families</div>
+    </div>
+    ${S.adminTab==='overview'  ? renderAdminOverview(allBookings, allParents) : ''}
+    ${S.adminTab==='bookings'  ? renderAdminBookings(allBookings) : ''}
+    ${S.adminTab==='slots'     ? renderAdminSlots() : ''}
+    ${S.adminTab==='families'  ? renderAdminFamilies(allParents) : ''}
+    `;}
+
+  cancelConfirm: () => {
+    const b = S.cancelTarget;
+    const dayNum = {Monday:1,Tuesday:2,Wednesday:3,Thursday:4,Friday:5,Saturday:6,Sunday:0};
+    const today = new Date().getDay();
+    let diff = dayNum[b.day] - today;
+    if (diff <= 0) diff += 7;
+    const canCancel = diff >= CANCEL_NOTICE_DAYS;
+    return `
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-calendar-x"></i> Cancel booking</div>
+      <div class="row"><span class="row-label">Student</span><span class="row-val">${b.studentName}</span></div>
+      <div class="row"><span class="row-label">Day &amp; time</span><span class="row-val">${b.day} at ${fmtTime(b.time, b.day)}</span></div>
+      <div class="row"><span class="row-label">Subject</span><span class="row-val">${b.subject}</span></div>
+      <div class="row"><span class="row-label">Level</span><span class="row-val">${b.level}</span></div>
+      <div class="row"><span class="row-label">Days until class</span><span class="row-val"><span class="pill ${canCancel?'pill-green':'pill-red'}">${diff} day${diff!==1?'s':''} away</span></span></div>
+      <hr/>
+      ${canCancel
+        ? `<p class="muted" style="margin-bottom:12px">This booking can be cancelled online.</p>
+           <button class="btn btn-danger" onclick="doCancel()"><i class="ti ti-trash"></i> Yes, cancel this booking</button>`
+        : `<div class="alert alert-err"><i class="ti ti-alert-triangle"></i> Cancellations must be made at least ${CANCEL_NOTICE_DAYS} days before the class day. Please contact the centre directly to make changes.</div>`
+      }
+      <button class="btn mt8" onclick="go({view:'dashboard',tab:'bookings'})"><i class="ti ti-arrow-left"></i> Go back</button>
+    </div>`;
+  }
+};
+
+/* ── Sub-renderers ── */
+function renderBookings(u) {
+  const all = [];
+  (u.students||[]).forEach(st => {
+    (st.bookings||[]).forEach(b => all.push({...b, studentName:st.firstName+' '+st.lastName, studentId:st.id}));
+  });
+  all.sort((a,b) => (DAY_ORDER[a.day]||0)-(DAY_ORDER[b.day]||0));
+
+  if (!all.length) return `
+    <div class="card empty-state">
+      <i class="ti ti-calendar-off"></i>
+      <p>No bookings yet</p>
+      ${(u.students||[]).length
+        ? `<button class="btn btn-primary" onclick="go({view:'dashboard',tab:'students'})">Go to Students to book</button>`
+        : `<p class="muted mt8" style="font-size:12px">Add a student first, then book their sessions.</p>`}
+    </div>`;
+
+  return `
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-calendar-week"></i> Weekly schedule</div>
+      ${all.map(b=>`
+        <div class="row" style="align-items:flex-start">
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:14px">${b.day} · ${fmtTime(b.time, b.day)}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px">${b.studentName} · ${b.subject} · Level ${b.level}</div>
+            <div style="margin-top:5px">
+              <span class="pill ${isEarly(b.level)?'pill-green':'pill-blue'}">${classLabel(b.level)}</span>
+              <span class="pill pill-amber" style="margin-left:4px">${slotDur(b.level)} min</span>
+            </div>
+          </div>
+          <button class="btn btn-danger btn-sm" style="margin-top:2px" onclick="startCancel('${b.studentId}','${b.id}')">Cancel</button>
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderStudents(u) {
+  const students = u.students||[];
+  if (!students.length) return `
+    <div class="card empty-state">
+      <i class="ti ti-users"></i>
+      <p>No students added yet</p>
+      <button class="btn btn-primary" onclick="go({view:'addStudent'})"><i class="ti ti-plus"></i> Add a student</button>
+    </div>`;
+
+  return `
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-users"></i> Your students</div>
+      ${students.map(st=>`
+        <div class="student-row">
+          <div class="avatar" style="margin-top:2px">${initials(st.firstName+' '+st.lastName)}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:14px">${st.firstName} ${st.lastName}</div>
+            <div style="font-size:12px;color:var(--text2)">${st.subject} · ${classLabel(st.level)} · ${slotDur(st.level)}-min slots</div>
+            <div style="margin-top:5px">${(st.bookings||[]).map(b=>`<span class="chip"><i class="ti ti-clock" style="font-size:11px"></i>${b.day.slice(0,3)} ${fmtTime(b.time, b.day)}</span>`).join('') || '<span class="muted" style="font-size:12px">No sessions booked</span>'}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0">
+            ${(st.bookings||[]).length<2 ? `<button class="btn btn-primary btn-sm" onclick="startBooking('${st.id}')">Book</button>` : ''}
+            ${S.confirmRemove===st.id
+              ? `<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+                   <span style="font-size:11px;color:var(--red-text);font-weight:600">Are you sure?</span>
+                   <div style="display:flex;gap:4px">
+                     <button class="btn btn-sm" onclick="go({confirmRemove:null})">No</button>
+                     <button class="btn btn-danger btn-sm" onclick="doRemoveStudent('${st.id}')"><i class="ti ti-trash"></i> Yes</button>
+                   </div>
+                 </div>`
+              : `<button class="btn btn-danger btn-sm" onclick="go({confirmRemove:'${st.id}'})">Remove</button>`
+            }
+          </div>
+        </div>`).join('')}
+    </div>
+    <button class="btn" onclick="go({view:'addStudent'})"><i class="ti ti-plus"></i> Add another student</button>`;
+}
+
+function renderAccount(u) {
+  return `
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-user"></i> Account details</div>
+      <div class="row"><span class="row-label">Name</span><span class="row-val">${u.firstName} ${u.lastName}</span></div>
+      <div class="row"><span class="row-label">Email</span><span class="row-val">${u.email}</span></div>
+      <div class="row"><span class="row-label">Phone</span><span class="row-val">${u.phone||'—'}</span></div>
+      <div class="row"><span class="row-label">Member since</span><span class="row-val">${new Date(u.createdAt).toLocaleDateString('en-CA',{year:'numeric',month:'long',day:'numeric'})}</span></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-info-circle"></i> Booking policy</div>
+      <p style="font-size:14px;color:var(--text2);line-height:1.7">
+        Each student attends <strong>twice per week</strong> on consistent days. Cancellations or changes must be requested at least <strong>${CANCEL_NOTICE_DAYS} days</strong> before the class day — otherwise please contact the centre directly.
+      </p>
+      <hr/>
+      <div style="font-size:13px;color:var(--text2)">
+        <div class="row"><span class="row-label">Early Learner (Age 3–9)</span><span class="row-val">30 min · max ${MAX_EARLY} per slot</span></div>
+        <div class="row"><span class="row-label">Main class (Age 10+)</span><span class="row-val">45 min · max ${MAX_STD} per slot</span></div>
+      </div>
+    </div>`;
+}
+
+function renderDayPicker(which) {
+  const bf = S.bookFlow;
+  const taken = which===2 ? bf.day1 : null;
+  return `
+    <p class="muted" style="margin-bottom:10px">Select <strong>day ${which}</strong> of 2 for ${bf.student.firstName}:</p>
+    ${Object.keys(SCHEDULE).map(d=>`
+      <button class="day-btn ${bf['day'+which]===d?'sel':''}" ${d===taken?'disabled':''} onclick="pickDay(${which},'${d}')">
+        <span>${d}</span>
+        <span style="font-size:12px;opacity:.7">${d==='Saturday'?'9 AM – 12 PM':'2:30 – 6 PM'}</span>
+      </button>`).join('')}
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn" onclick="bfBack()"><i class="ti ti-arrow-left"></i> Back</button>
+      <button class="btn btn-primary" ${bf['day'+which]?'':'disabled'} onclick="bfNext()">Next <i class="ti ti-arrow-right"></i></button>
+    </div>`;
+}
+
+function renderSlotPicker(which) {
+  const bf = S.bookFlow;
+  const day = bf['day'+which];
+  const lvl = bf.student.level;
+  const capKey = isEarly(lvl) ? 'early' : 'std';
+  return `
+    <p class="muted" style="margin-bottom:6px">Choose a time on <strong>${day}</strong>:</p>
+    <div class="slot-grid">
+      ${availHours(day, lvl).map(h => {
+        const used = (S.cap[day]&&S.cap[day][h]) ? S.cap[day][h][capKey] : 0;
+        const avail = slotMax(lvl) - used;
+        const full = avail <= 0;
+        const sel  = bf['slot'+which]===h;
+        return `<div class="slot ${full?'full':''} ${sel?'sel':''}" ${full?'':('onclick="pickSlot('+which+',\''+h+'\')"')}>
+          <div class="slot-t">${fmtTime(h, day)}</div>
+          <div class="slot-a">${full?'Full':''+avail+' spot'+(avail!==1?'s':'')+' left'}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn" onclick="bfBack()"><i class="ti ti-arrow-left"></i> Back</button>
+      <button class="btn btn-primary" ${bf['slot'+which]?'':'disabled'} onclick="bfNext()">Next <i class="ti ti-arrow-right"></i></button>
+    </div>`;
+}
+
+function renderReview() {
+  const bf = S.bookFlow;
+  return `
+    <div class="alert alert-info"><i class="ti ti-check"></i> Review your selection before confirming.</div>
+    <div class="row"><span class="row-label">Student</span><span class="row-val">${bf.student.firstName} ${bf.student.lastName}</span></div>
+    <div class="row"><span class="row-label">Subject</span><span class="row-val">${bf.student.subject}</span></div>
+    <div class="row"><span class="row-label">Class type</span><span class="row-val">${classLabel(bf.student.level)}</span></div>
+    <div class="row"><span class="row-label">Session length</span><span class="row-val">${slotDur(bf.student.level)} minutes</span></div>
+    <div class="row"><span class="row-label">Day 1</span><span class="row-val">${bf.day1} at ${fmtTime(bf.slot1, bf.day1)}</span></div>
+    <div class="row"><span class="row-label">Day 2</span><span class="row-val">${bf.day2} at ${fmtTime(bf.slot2, bf.day2)}</span></div>
+    <div class="row"><span class="row-label">Frequency</span><span class="row-val">Weekly (recurring)</span></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn" onclick="bfBack()"><i class="ti ti-arrow-left"></i> Back</button>
+      <button class="btn btn-primary" onclick="confirmBooking()"><i class="ti ti-check"></i> Confirm booking</button>
+    </div>`;
+}
+
+/* ── Actions ── */
+function showMsg(txt, type='alert-err') {
+  const el = document.getElementById('msg');
+  if (el) el.innerHTML = `<div class="alert ${type}" style="margin-top:10px"><i class="ti ti-${type==='alert-err'?'alert-triangle':'check'}"></i> ${txt}</div>`;
+}
+
+function handleLogin() {
+  const em = (document.getElementById('em').value||'').trim().toLowerCase();
+  if (!em || !em.includes('@') || !em.includes('.')) { showMsg('Please enter a valid email address.'); return; }
+  const existing = LS.get('kum_user:'+em);
+  if (existing) { S.user = existing; go({view:'dashboard', tab:'bookings'}); }
+  else { go({view:'register', pendingEmail:em}); }
+}
+
+function handleRegister() {
+  const fn = (document.getElementById('fn').value||'').trim();
+  const ln = (document.getElementById('ln').value||'').trim();
+  const ph = (document.getElementById('ph').value||'').trim();
+  if (!fn||!ln) { showMsg('Please enter your first and last name.'); return; }
+  const user = { firstName:fn, lastName:ln, phone:ph, email:S.pendingEmail, students:[], createdAt:Date.now() };
+  LS.set('kum_user:'+S.pendingEmail, user);
+  S.user = user;
+  go({view:'dashboard', tab:'students'});
+}
+
+function signOut() { S.user=null; go({view:'login'}); }
+
+function handleAddStudent() {
+  const fn   = (document.getElementById('sfn').value||'').trim();
+  const ln   = (document.getElementById('sln').value||'').trim();
+  const lvl  = document.getElementById('slvl').value;
+  const subj = document.getElementById('ssubj').value;
+  if (!fn||!ln||!lvl) { showMsg('Please fill in all fields.'); return; }
+  const st = { id:uid(), firstName:fn, lastName:ln, level:lvl, subject:subj, bookings:[] };
+  S.user.students.push(st);
+  LS.set('kum_user:'+S.user.email, S.user);
+  go({view:'dashboard', tab:'students'});
+}
+
+function doRemoveStudent(id) {
+  const st = S.user.students.find(s=>s.id===id);
+  if (st) {
+    const capKey = isEarly(st.level)?'early':'std';
+    (st.bookings||[]).forEach(b => {
+      if (S.cap[b.day]&&S.cap[b.day][b.time]) S.cap[b.day][b.time][capKey] = Math.max(0, S.cap[b.day][b.time][capKey]-1);
+    });
+    LS.set('kum_cap', S.cap);
+  }
+  S.user.students = S.user.students.filter(s=>s.id!==id);
+  LS.set('kum_user:'+S.user.email, S.user);
+  S.confirmRemove = null;
+  go({view:'dashboard', tab:'students'});
+}
+
+function startBooking(sid) {
+  const st = S.user.students.find(s=>s.id===sid);
+  if (!st) return;
+  if ((st.bookings||[]).length >= 2) { alert('This student already has 2 sessions booked. Please cancel one first.'); return; }
+  S.bookFlow = { student:st, step:1, day1:null, slot1:null, day2:null, slot2:null };
+  go({view:'bookSlots'});
+}
+
+function pickDay(which, day) { S.bookFlow['day'+which]=day; render(); }
+function pickSlot(which, h)  { S.bookFlow['slot'+which]=h;  render(); }
+
+function bfNext() {
+  const s = S.bookFlow.step;
+  if (s===1 && !S.bookFlow.day1)  return;
+  if (s===2 && !S.bookFlow.slot1) return;
+  if (s===3 && !S.bookFlow.day2)  return;
+  if (s===4 && !S.bookFlow.slot2) return;
+  S.bookFlow.step = Math.min(5, s+1);
+  render();
+}
+function bfBack() {
+  if (S.bookFlow.step <= 1) { go({view:'dashboard',tab:'students'}); return; }
+  S.bookFlow.step--;
+  render();
+}
+
+function confirmBooking() {
+  const bf = S.bookFlow;
+  const st = S.user.students.find(s=>s.id===bf.student.id);
+  const capKey = isEarly(st.level)?'early':'std';
+  const id = uid();
+  st.bookings = st.bookings||[];
+  st.bookings.push(
+    {id:id+'a', day:bf.day1, time:bf.slot1, subject:st.subject, level:st.level},
+    {id:id+'b', day:bf.day2, time:bf.slot2, subject:st.subject, level:st.level}
+  );
+  if (!S.cap[bf.day1]) S.cap[bf.day1]={};
+  if (!S.cap[bf.day1][bf.slot1]) S.cap[bf.day1][bf.slot1]={early:0,std:0};
+  if (!S.cap[bf.day2]) S.cap[bf.day2]={};
+  if (!S.cap[bf.day2][bf.slot2]) S.cap[bf.day2][bf.slot2]={early:0,std:0};
+  S.cap[bf.day1][bf.slot1][capKey]++;
+  S.cap[bf.day2][bf.slot2][capKey]++;
+  LS.set('kum_cap', S.cap);
+  LS.set('kum_user:'+S.user.email, S.user);
+  go({view:'dashboard', tab:'bookings'});
+}
+
+function startCancel(sid, bid) {
+  const st = S.user.students.find(s=>s.id===sid);
+  const b  = st.bookings.find(x=>x.id===bid);
+  S.cancelTarget = {...b, studentName:st.firstName+' '+st.lastName, studentId:sid};
+  go({view:'cancelConfirm'});
+}
+
+function doCancel() {
+  const b  = S.cancelTarget;
+  const st = S.user.students.find(s=>s.id===b.studentId);
+  const capKey = isEarly(b.level)?'early':'std';
+  if (S.cap[b.day]&&S.cap[b.day][b.time]) S.cap[b.day][b.time][capKey]=Math.max(0, S.cap[b.day][b.time][capKey]-1);
+  st.bookings = st.bookings.filter(x=>x.id!==b.id);
+  LS.set('kum_cap', S.cap);
+  LS.set('kum_user:'+S.user.email, S.user);
+  go({view:'dashboard', tab:'bookings'});
+}
+
+
+/* ── Admin helpers ── */
+function getAllParents() {
+  const parents = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('kum_user:')) {
+      const u = LS.get(key);
+      if (u) parents.push(u);
+    }
+  }
+  return parents;
+}
+
+function getAllBookings() {
+  const all = [];
+  getAllParents().forEach(u => {
+    (u.students||[]).forEach(st => {
+      (st.bookings||[]).forEach(b => {
+        all.push({
+          ...b,
+          studentName: st.firstName + ' ' + st.lastName,
+          parentName:  u.firstName + ' ' + u.lastName,
+          parentEmail: u.email,
+          parentPhone: u.phone||'—',
+          classType:   classLabel(b.level)
+        });
+      });
+    });
+  });
+  all.sort((a,b) => (DAY_ORDER[a.day]||0)-(DAY_ORDER[b.day]||0) || a.time.localeCompare(b.time));
+  return all;
+}
+
+function handleAdminLogin() {
+  const pw = (document.getElementById('apw').value||'').trim();
+  if (pw === ADMIN_PASSWORD) {
+    go({view:'admin', adminTab:'overview'});
+  } else {
+    showMsg('Incorrect password. Please try again.');
+  }
+}
+
+function renderAdminOverview(allBookings, allParents) {
+  const earlyCount = allBookings.filter(b=>isEarly(b.level)).length;
+  const mainCount  = allBookings.filter(b=>!isEarly(b.level)).length;
+  const dayTotals  = {};
+  Object.keys(SCHEDULE).forEach(d => { dayTotals[d] = allBookings.filter(b=>b.day===d).length; });
+  return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem">
+      <div style="background:var(--bg2);border-radius:var(--radius);padding:1rem;text-align:center">
+        <div style="font-size:28px;font-weight:700;color:var(--text)">${allBookings.length}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">Total bookings</div>
+      </div>
+      <div style="background:var(--bg2);border-radius:var(--radius);padding:1rem;text-align:center">
+        <div style="font-size:28px;font-weight:700;color:var(--text)">${allParents.length}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">Registered families</div>
+      </div>
+      <div style="background:var(--green-bg);border-radius:var(--radius);padding:1rem;text-align:center">
+        <div style="font-size:28px;font-weight:700;color:var(--green-text)">${earlyCount}</div>
+        <div style="font-size:12px;color:var(--green-text);margin-top:2px">Early Learner sessions</div>
+      </div>
+      <div style="background:var(--blue-bg);border-radius:var(--radius);padding:1rem;text-align:center">
+        <div style="font-size:28px;font-weight:700;color:var(--blue-text)">${mainCount}</div>
+        <div style="font-size:12px;color:var(--blue-text);margin-top:2px">Main class sessions</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><i class="ti ti-calendar-week"></i> Bookings per day</div>
+      ${Object.keys(SCHEDULE).map(d => {
+        const count = dayTotals[d]||0;
+        const totalSlots = SCHEDULE[d].hours.length;
+        const pct = Math.round((count / (totalSlots * (MAX_EARLY + MAX_STD))) * 100);
+        return `<div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+            <span style="font-weight:500">${d}</span>
+            <span style="color:var(--text2)">${count} student${count!==1?'s':''}</span>
+          </div>
+          <div style="height:6px;background:var(--bg2);border-radius:3px">
+            <div style="height:6px;background:var(--blue-mid);border-radius:3px;width:${Math.min(pct,100)}%"></div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function renderAdminBookings(allBookings) {
+  if (!allBookings.length) return `
+    <div class="card empty-state">
+      <i class="ti ti-calendar-off"></i>
+      <p>No bookings yet</p>
+    </div>`;
+  const byDay = {};
+  Object.keys(SCHEDULE).forEach(d => { byDay[d] = allBookings.filter(b=>b.day===d); });
+  return Object.keys(SCHEDULE).map(d => {
+    if (!byDay[d].length) return '';
+    return `<div class="card">
+      <div class="card-hd"><i class="ti ti-calendar-event"></i> ${d}
+        <span class="pill pill-blue" style="margin-left:auto;font-size:11px">${byDay[d].length} booking${byDay[d].length!==1?'s':''}</span>
+      </div>
+      ${byDay[d].map(b=>`
+        <div class="row" style="align-items:flex-start">
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:14px">${fmtTime(b.time, b.day)} · ${b.studentName}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px">${b.subject} · <span class="pill ${isEarly(b.level)?'pill-green':'pill-blue'}">${b.classType}</span></div>
+            <div style="font-size:12px;color:var(--text2);margin-top:3px"><i class="ti ti-user" style="font-size:11px"></i> ${b.parentName} · ${b.parentEmail}</div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+function renderAdminSlots() {
+  return Object.keys(SCHEDULE).map(day => {
+    const hours = SCHEDULE[day].hours;
+    return `<div class="card">
+      <div class="card-hd"><i class="ti ti-table"></i> ${day}
+        <span style="font-size:12px;color:var(--text2);font-weight:400;margin-left:4px">${day==='Saturday'?'9 AM – 12 PM':'2:30 – 6 PM'}</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed">
+          <thead>
+            <tr style="border-bottom:0.5px solid var(--border)">
+              <th style="text-align:left;padding:7px 6px;color:var(--text2);font-weight:600;width:70px">Time</th>
+              <th style="text-align:center;padding:7px 6px;color:var(--green-text);font-weight:600">Early Learner<br/><span style="font-weight:400;font-size:11px">max ${MAX_EARLY}</span></th>
+              <th style="text-align:center;padding:7px 6px;color:var(--blue-text);font-weight:600">Main class<br/><span style="font-weight:400;font-size:11px">max ${MAX_STD}</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${hours.map(h => {
+              const cap = (S.cap[day]&&S.cap[day][h]) ? S.cap[day][h] : {early:0,std:0};
+              const earlyLeft = MAX_EARLY - cap.early;
+              const stdLeft   = MAX_STD   - cap.std;
+              const earlyPct  = Math.round((cap.early/MAX_EARLY)*100);
+              const stdPct    = Math.round((cap.std/MAX_STD)*100);
+              const earlyColor = cap.early===0?'var(--text3)':cap.early>=MAX_EARLY?'var(--red-text)':'var(--green-text)';
+              const stdColor   = cap.std===0?'var(--text3)':cap.std>=MAX_STD?'var(--red-text)':'var(--blue-text)';
+              return `<tr style="border-bottom:0.5px solid var(--border)">
+                <td style="padding:8px 6px;font-weight:600;font-size:13px;color:var(--text)">${fmtTime(h,day)}</td>
+                <td style="padding:8px 6px;text-align:center">
+                  <div style="font-weight:700;font-size:15px;color:${earlyColor}">${cap.early}/${MAX_EARLY}</div>
+                  <div style="height:4px;background:var(--bg2);border-radius:2px;margin-top:4px">
+                    <div style="height:4px;background:${cap.early>=MAX_EARLY?'var(--red-text)':'var(--green-text)'};border-radius:2px;width:${earlyPct}%"></div>
+                  </div>
+                  <div style="font-size:11px;color:var(--text2);margin-top:2px">${earlyLeft} left</div>
+                </td>
+                <td style="padding:8px 6px;text-align:center">
+                  <div style="font-weight:700;font-size:15px;color:${stdColor}">${cap.std}/${MAX_STD}</div>
+                  <div style="height:4px;background:var(--bg2);border-radius:2px;margin-top:4px">
+                    <div style="height:4px;background:${cap.std>=MAX_STD?'var(--red-text)':'var(--blue-mid)'};border-radius:2px;width:${stdPct}%"></div>
+                  </div>
+                  <div style="font-size:11px;color:var(--text2);margin-top:2px">${stdLeft} left</div>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAdminFamilies(allParents) {
+  if (!allParents.length) return `
+    <div class="card empty-state">
+      <i class="ti ti-users"></i>
+      <p>No families registered yet</p>
+    </div>`;
+  return `<div class="card">
+    <div class="card-hd"><i class="ti ti-users"></i> Registered families <span class="pill pill-blue" style="margin-left:auto">${allParents.length}</span></div>
+    ${allParents.map(u => {
+      const students = u.students||[];
+      const totalBookings = students.reduce((n,st)=>n+(st.bookings||[]).length,0);
+      return `<div class="student-row">
+        <div class="avatar">${initials(u.firstName+' '+u.lastName)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:14px">${u.firstName} ${u.lastName}</div>
+          <div style="font-size:12px;color:var(--text2)">${u.email} · ${u.phone||'no phone'}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">${students.length} student${students.length!==1?'s':''} · ${totalBookings} active booking${totalBookings!==1?'s':''}</div>
+          <div style="margin-top:5px">${students.map(st=>`<span class="chip"><i class="ti ti-user" style="font-size:11px"></i>${st.firstName} · ${classLabel(st.level)}</span>`).join('')}</div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+/* ── Event wiring ── */
+function attachEvents() {
+  const em = document.getElementById('em');
+  if (em) em.addEventListener('keydown', e => { if(e.key==='Enter') handleLogin(); });
+  const fn = document.getElementById('fn');
+  if (fn) fn.focus();
+}
+
+/* ── Boot ── */
+render();
+</script>
+</body>
+</html>
