@@ -587,16 +587,32 @@ const slotMax = lvl => isEarly(lvl) ? MAX_EARLY : MAX_STD;
 const initials = n => n.trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
 const fmtTime  = (h, day) => h + ' ' + (day && SCHEDULE[day] ? SCHEDULE[day].suffix : (parseInt(h) < 9 ? 'AM' : 'PM'));
 const availHours = (day, lvl) => {
-  const hours = SCHEDULE[day].hours;
-  if (isEarly(lvl)) return hours;
-  return hours.filter(h => {
+  const suffix = SCHEDULE[day].suffix;
+  const closeMin = suffix === 'AM' ? 12*60 : 18*60;
+  const toMin = h => {
     const [hr, mn] = h.split(':').map(Number);
-    const suffix = SCHEDULE[day].suffix;
-    const base = suffix === 'AM' ? 0 : 12;
-    const startMin = (hr === 12 ? 12 : hr + (suffix === 'PM' && hr !== 12 ? 12 : 0)) * 60 + mn;
-    const closeMin = suffix === 'AM' ? 12*60 : 18*60;
-    return startMin + 45 <= closeMin;
-  });
+    return (hr + (suffix === 'PM' && hr !== 12 ? 12 : 0)) * 60 + mn;
+  };
+  const toHHMM = totalMin => {
+    let h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    if (suffix === 'PM' && h > 12) h = h - 12;
+    return h + ':' + (m === 0 ? '00' : m < 10 ? '0'+m : m);
+  };
+  if (isEarly(lvl)) {
+    // Early Learner: use the centre's fixed 30-min slots, filter those that end by close
+    return SCHEDULE[day].hours.filter(h => toMin(h) + 30 <= closeMin);
+  } else {
+    // Main class: generate 45-min slots starting from opening time
+    const openMin = toMin(SCHEDULE[day].hours[0]);
+    const slots = [];
+    let t = openMin;
+    while (t + 45 <= closeMin) {
+      slots.push(toHHMM(t));
+      t += 45;
+    }
+    return slots;
+  }
 };
 const uid      = () => Math.random().toString(36).slice(2,9);
 
@@ -607,15 +623,42 @@ const LS = {
   del: k => { try { localStorage.removeItem(k); } catch(e){} }
 };
 
+function allPossibleSlots(day) {
+  const suffix = SCHEDULE[day].suffix;
+  const closeMin = suffix === 'AM' ? 12*60 : 18*60;
+  const toMin = h => {
+    const [hr, mn] = h.split(':').map(Number);
+    return (hr + (suffix === 'PM' && hr !== 12 ? 12 : 0)) * 60 + mn;
+  };
+  const toHHMM = totalMin => {
+    let h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    if (suffix === 'PM' && h > 12) h = h - 12;
+    return h + ':' + (m === 0 ? '00' : m < 10 ? '0'+m : m);
+  };
+  const earlySlots = SCHEDULE[day].hours;
+  const openMin = toMin(SCHEDULE[day].hours[0]);
+  const mainSlots = [];
+  let t = openMin;
+  while (t + 45 <= closeMin) { mainSlots.push(toHHMM(t)); t += 45; }
+  return [...new Set([...earlySlots, ...mainSlots])];
+}
+
 function loadCap() {
   let c = LS.get('kum_cap');
   if (!c) {
     c = {};
     Object.keys(SCHEDULE).forEach(d => {
       c[d] = {};
-      SCHEDULE[d].hours.forEach(h => { c[d][h] = {early:0, std:0}; });
+      allPossibleSlots(d).forEach(h => { c[d][h] = {early:0, std:0}; });
     });
     LS.set('kum_cap', c);
+  } else {
+    // Ensure any new slots are initialised in existing cap data
+    Object.keys(SCHEDULE).forEach(d => {
+      if (!c[d]) c[d] = {};
+      allPossibleSlots(d).forEach(h => { if (!c[d][h]) c[d][h] = {early:0, std:0}; });
+    });
   }
   return c;
 }
@@ -1161,7 +1204,11 @@ function renderAdminBookings(allBookings) {
 
 function renderAdminSlots() {
   return Object.keys(SCHEDULE).map(day => {
-    const hours = SCHEDULE[day].hours;
+    const earlyHours = availHours(day, 'early');
+    const mainHours  = availHours(day, 'main');
+    const hours = allPossibleSlots(day).filter(h =>
+      earlyHours.includes(h) || mainHours.includes(h)
+    ).sort();
     return `<div class="card">
       <div class="card-hd"><i class="ti ti-table"></i> ${day}
         <span style="font-size:12px;color:var(--text2);font-weight:400;margin-left:4px">${day==='Saturday'?'9 AM – 12 PM':'2:30 – 6 PM'}</span>
