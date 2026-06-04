@@ -614,7 +614,31 @@ const availHours = (day, lvl) => {
     return slots;
   }
 };
-const uid      = () => Math.random().toString(36).slice(2,9);
+const uid = () => Math.random().toString(36).slice(2,9);
+
+// Returns the next Date object for a given day name (Monday, Saturday etc.)
+function nextOccurrence(dayName) {
+  const dayNum = {Sunday:0,Monday:1,Tuesday:2,Wednesday:3,Thursday:4,Friday:5,Saturday:6};
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  let diff = dayNum[dayName] - today.getDay();
+  if (diff <= 0) diff += 7;
+  const d = new Date(today);
+  d.setDate(today.getDate() + diff);
+  return d;
+}
+
+// Returns days between today (midnight) and a future Date
+function daysUntil(date) {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  return Math.round((date - today) / 86400000);
+}
+
+// Format a Date as "Mon, Jun 9"
+function fmtDate(date) {
+  return date.toLocaleDateString('en-CA', {weekday:'short', month:'short', day:'numeric'});
+}
 
 /* ── Storage ── localStorage for real persistence */
 const LS = {
@@ -803,27 +827,51 @@ const VIEWS = {
 
   cancelConfirm: () => {
     const b = S.cancelTarget;
-    const dayNum = {Monday:1,Tuesday:2,Wednesday:3,Thursday:4,Friday:5,Saturday:6,Sunday:0};
-    const today = new Date().getDay();
-    let diff = dayNum[b.day] - today;
-    if (diff <= 0) diff += 7;
-    const canCancel = diff >= CANCEL_NOTICE_DAYS;
+    const nextDate = nextOccurrence(b.day);
+    const days = daysUntil(nextDate);
+    const canCancel = days >= CANCEL_NOTICE_DAYS;
+    const dateStr = fmtDate(nextDate);
+
+    // Build next 4 upcoming dates for this day
+    const upcomingDates = [];
+    for (let i = 0; i < 4; i++) {
+      const d = new Date(nextDate);
+      d.setDate(nextDate.getDate() + i * 7);
+      upcomingDates.push(d);
+    }
+
     return `
-    <div class="section-label">Cancel booking</div>
+    <div class="section-label">Cancel a session</div>
     <div class="card">
-      <div class="card-hd"><i class="ti ti-calendar-x"></i> Cancel booking</div>
+      <div class="card-hd"><i class="ti ti-calendar-x"></i> Cancel a session</div>
       <div class="row"><span class="row-label">Student</span><span class="row-val">${b.studentName}</span></div>
-      <div class="row"><span class="row-label">Day &amp; time</span><span class="row-val">${b.day} at ${fmtTime(b.time, b.day)}</span></div>
-      <div class="row"><span class="row-label">Subject</span><span class="row-val">${b.subject}</span></div>
-      <div class="row"><span class="row-label">Level</span><span class="row-val">${b.level}</span></div>
-      <div class="row"><span class="row-label">Days until class</span><span class="row-val"><span class="pill ${canCancel?'pill-green':'pill-red'}">${diff} day${diff!==1?'s':''} away</span></span></div>
+      <div class="row"><span class="row-label">Recurring slot</span><span class="row-val">${b.day} · ${fmtTime(b.time, b.day)}</span></div>
+      <div class="row"><span class="row-label">Subject</span><span class="row-val">${b.subject} · ${classLabel(b.level)}</span></div>
       <hr/>
-      ${canCancel
-        ? `<p class="muted" style="margin-bottom:12px">This booking can be cancelled online.</p>
-           <button class="btn btn-danger" onclick="doCancel()"><i class="ti ti-trash"></i> Yes, cancel this booking</button>`
-        : `<div class="alert alert-err"><i class="ti ti-alert-triangle"></i> Cancellations must be made at least ${CANCEL_NOTICE_DAYS} days before the class day. Please contact the centre directly to make changes.</div>`
-      }
-      <button class="btn mt8" onclick="go({view:'dashboard',tab:'bookings'})"><i class="ti ti-arrow-left"></i> Go back</button>
+      <p class="muted" style="margin-bottom:12px">Select the date you want to cancel. This will skip that one session only — your recurring slot stays intact.</p>
+      ${upcomingDates.map((d,i) => {
+        const dDays = daysUntil(d);
+        const dStr = fmtDate(d);
+        const isoStr = d.toISOString().slice(0,10);
+        const ok = dDays >= CANCEL_NOTICE_DAYS;
+        const alreadyCancelled = (b.cancelledDates||[]).includes(isoStr);
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:${alreadyCancelled?'var(--fog2)':ok?'var(--fog)':'var(--red-bg)'};border:1px solid ${alreadyCancelled?'var(--border)':ok?'var(--border)':'rgba(214,48,49,0.15)'};margin-bottom:8px">
+          <div>
+            <div style="font-weight:600;font-size:14px;color:${alreadyCancelled?'var(--ink3)':'var(--ink)'}">${dStr}</div>
+            <div style="font-size:12px;margin-top:2px;color:${ok?'var(--ink3)':'var(--red)'}">
+              ${alreadyCancelled ? '✓ Already cancelled' : ok ? dDays+' days away — can cancel' : 'Less than '+CANCEL_NOTICE_DAYS+' days — too late'}
+            </div>
+          </div>
+          ${alreadyCancelled
+            ? `<span class="pill pill-ink">Cancelled</span>`
+            : ok
+              ? `<button class="btn btn-danger btn-sm" onclick="doCancelDate('${isoStr}')"><i class="ti ti-x"></i> Cancel</button>`
+              : `<span class="pill pill-red">Too late</span>`
+          }
+        </div>`;
+      }).join('')}
+      <div class="alert alert-warn mt8"><i class="ti ti-info-circle"></i> Need to cancel a date less than ${CANCEL_NOTICE_DAYS} days away? Please call us at (604) 245-2121.</div>
+      <button class="btn mt8" onclick="go({view:'dashboard',tab:'bookings'})"><i class="ti ti-arrow-left"></i> Back to bookings</button>
     </div>`;
   }
 };
@@ -847,18 +895,24 @@ function renderBookings(u) {
   return `
     <div class="card">
       <div class="card-hd"><i class="ti ti-calendar-week"></i> Weekly schedule</div>
-      ${all.map(b=>`
+      ${all.map(b=>{
+        const nextDate = nextOccurrence(b.day);
+        const days = daysUntil(nextDate);
+        const dateStr = fmtDate(nextDate);
+        return `
         <div class="row" style="align-items:flex-start">
           <div style="flex:1">
             <div style="font-weight:600;font-size:14px">${b.day} · ${fmtTime(b.time, b.day)}</div>
-            <div style="font-size:12px;color:var(--text2);margin-top:2px">${b.studentName} · ${b.subject} · Level ${b.level}</div>
-            <div style="margin-top:5px">
-              <span class="pill ${isEarly(b.level)?'pill-green':'pill-blue'}">${classLabel(b.level)}</span>
-              <span class="pill pill-ink" style="margin-left:4px">${slotDur(b.level)} min</span>
+            <div style="font-size:12px;color:var(--ink3);margin-top:2px">${b.studentName} · ${b.subject}</div>
+            <div style="margin-top:5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span class="pill ${isEarly(b.level)?'pill-green':'pill-teal'}">${classLabel(b.level)}</span>
+              <span class="pill pill-ink"><i class="ti ti-calendar" style="font-size:11px"></i> Next: ${dateStr}</span>
+              <span class="pill ${days<=3?'pill-amber':'pill-ink'}">${days}d away</span>
             </div>
           </div>
           <button class="btn btn-danger btn-sm" style="margin-top:2px" onclick="startCancel('${b.studentId}','${b.id}')">Cancel</button>
-        </div>`).join('')}
+        </div>`;
+      }).join('')}
     </div>`;
 }
 
@@ -1089,7 +1143,22 @@ function startCancel(sid, bid) {
   go({view:'cancelConfirm'});
 }
 
+function doCancelDate(isoDate) {
+  const b  = S.cancelTarget;
+  const st = S.user.students.find(s=>s.id===b.studentId);
+  const booking = st.bookings.find(x=>x.id===b.id);
+  if (!booking.cancelledDates) booking.cancelledDates = [];
+  if (!booking.cancelledDates.includes(isoDate)) {
+    booking.cancelledDates.push(isoDate);
+  }
+  // Update cancelTarget so the screen refreshes with the new state
+  S.cancelTarget = {...booking, studentName:st.firstName+' '+st.lastName, studentId:st.id};
+  LS.set('kum_user:'+S.user.email, S.user);
+  render();
+}
+
 function doCancel() {
+  // Full permanent cancel (removes the recurring slot entirely)
   const b  = S.cancelTarget;
   const st = S.user.students.find(s=>s.id===b.studentId);
   const capKey = isEarly(b.level)?'early':'std';
