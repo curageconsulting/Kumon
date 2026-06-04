@@ -825,6 +825,33 @@ const VIEWS = {
     ${S.adminTab==='families'  ? renderAdminFamilies(allParents) : ''}
     `;},
 
+  bookingSuccess: () => {
+    const st = S.user.students.find(s=>s.id===S.lastBookedStudentId);
+    const bookings = st ? st.bookings.filter(b=>S.lastBookedIds.includes(b.id)) : [];
+    return `
+    <div class="section-label">Booking confirmed</div>
+    <div class="card" style="text-align:center;padding:2rem 1.5rem">
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--green-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">
+        <i class="ti ti-circle-check" style="font-size:30px;color:var(--green)"></i>
+      </div>
+      <h2 style="font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:6px">You're booked!</h2>
+      <p class="muted" style="margin-bottom:1.5rem">Sessions have been confirmed for <strong>${st?st.firstName:''}</strong>. Add them to your calendar so you never miss a class.</p>
+      ${bookings.map(b=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--fog);border-radius:var(--radius);margin-bottom:8px;text-align:left">
+          <div>
+            <div style="font-weight:600;font-size:14px">${b.day} · ${fmtTime(b.time,b.day)}</div>
+            <div style="font-size:12px;color:var(--ink3);margin-top:1px">Weekly · ${slotDur(b.level)} min</div>
+          </div>
+          <span class="pill pill-green"><i class="ti ti-check" style="font-size:11px"></i> Confirmed</span>
+        </div>`).join('')}
+      <button class="btn btn-primary mt12" onclick="addBookingToCalendar('${S.lastBookedStudentId}',${JSON.stringify(S.lastBookedIds||[])})">
+        <i class="ti ti-calendar-plus"></i> Add sessions to calendar
+      </button>
+      <p class="muted" style="font-size:12px;margin-top:8px">Downloads an .ics file — works with Google Calendar, Apple Calendar &amp; Outlook</p>
+      <button class="btn mt8" onclick="go({view:'dashboard',tab:'bookings'})"><i class="ti ti-arrow-right"></i> Go to my bookings</button>
+    </div>`;
+  },
+
   cancelConfirm: () => {
     const b = S.cancelTarget;
     const nextDate = nextOccurrence(b.day);
@@ -894,7 +921,9 @@ function renderBookings(u) {
 
   return `
     <div class="card">
-      <div class="card-hd"><i class="ti ti-calendar-week"></i> Weekly schedule</div>
+      <div class="card-hd"><i class="ti ti-calendar-week"></i> Weekly schedule
+        <button class="btn btn-ghost btn-sm" style="margin-left:auto;font-size:12px" onclick="addAllToCalendar()"><i class="ti ti-calendar-plus"></i> Add all to calendar</button>
+      </div>
       ${all.map(b=>{
         const nextDate = nextOccurrence(b.day);
         const days = daysUntil(nextDate);
@@ -910,7 +939,10 @@ function renderBookings(u) {
               <span class="pill ${days<=3?'pill-amber':'pill-ink'}">${days}d away</span>
             </div>
           </div>
-          <button class="btn btn-danger btn-sm" style="margin-top:2px" onclick="startCancel('${b.studentId}','${b.id}')">Cancel</button>
+          <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;margin-top:2px">
+            <button class="btn btn-ghost btn-sm" onclick="addBookingToCalendar('${b.studentId}',['${b.id}'])"><i class="ti ti-calendar-plus"></i> Add to calendar</button>
+            <button class="btn btn-danger btn-sm" onclick="startCancel('${b.studentId}','${b.id}')"><i class="ti ti-x"></i> Cancel session</button>
+          </div>
         </div>`;
       }).join('')}
     </div>`;
@@ -1133,7 +1165,9 @@ function confirmBooking() {
   S.cap[bf.day2][bf.slot2][capKey]++;
   LS.set('kum_cap', S.cap);
   LS.set('kum_user:'+S.user.email, S.user);
-  go({view:'dashboard', tab:'bookings'});
+  S.lastBookedStudentId = bf.student.id;
+  S.lastBookedIds = [id+'a', id+'b'];
+  go({view:'bookingSuccess'});
 }
 
 function startCancel(sid, bid) {
@@ -1154,6 +1188,9 @@ function doCancelDate(isoDate) {
   // Update cancelTarget so the screen refreshes with the new state
   S.cancelTarget = {...booking, studentName:st.firstName+' '+st.lastName, studentId:st.id};
   LS.set('kum_user:'+S.user.email, S.user);
+  // Auto-download updated ICS so calendar reflects the cancellation
+  const updatedICS = generateICS([booking], st.firstName+' '+st.lastName, st.subject, slotDur(st.level));
+  downloadICS(updatedICS, 'kumon-'+st.firstName.toLowerCase()+'-updated.ics');
   render();
 }
 
@@ -1348,6 +1385,164 @@ function renderAdminFamilies(allParents) {
       </div>`;
     }).join('')}
   </div>`;
+}
+
+/* ── Calendar (ICS) helpers ── */
+
+function dayNameToICSDay(day) {
+  return {Monday:'MO',Tuesday:'TU',Wednesday:'WE',Thursday:'TH',Friday:'FR',Saturday:'SA',Sunday:'SU'}[day];
+}
+
+// Convert "2:30" + suffix "PM" -> "143000" (HHMMSS in UTC-like local)
+function timeToICS(h, suffix) {
+  let [hr, mn] = h.split(':').map(Number);
+  if (suffix === 'PM' && hr !== 12) hr += 12;
+  if (suffix === 'AM' && hr === 12) hr = 0;
+  return String(hr).padStart(2,'0') + String(mn).padStart(2,'0') + '00';
+}
+
+// Format a Date as YYYYMMDD
+function dateToICS(d) {
+  return d.toISOString().slice(0,10).replace(/-/g,'');
+}
+
+// Add minutes to a HHMMSS string, returns HHMMSS
+function addMinsToICSTime(icsTime, mins) {
+  const hr = parseInt(icsTime.slice(0,2));
+  const mn = parseInt(icsTime.slice(2,4));
+  const total = hr*60 + mn + mins;
+  return String(Math.floor(total/60)).padStart(2,'0') + String(total%60).padStart(2,'0') + '00';
+}
+
+function generateICS(bookings, studentName, subject, duration) {
+  const now = new Date().toISOString().replace(/[-:]/g,'').slice(0,15)+'Z';
+  let cal = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Kumon Brookswood//Booking Portal//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'X-WR-CALNAME:Kumon Brookswood — '+studentName,
+    'X-WR-TIMEZONE:America/Vancouver'
+  ];
+
+  bookings.forEach(b => {
+    const suffix = SCHEDULE[b.day] ? SCHEDULE[b.day].suffix : 'PM';
+    const startTime = timeToICS(b.time, suffix);
+    const endTime   = addMinsToICSTime(startTime, duration);
+    const firstDate = nextOccurrence(b.day);
+    const dtStart   = dateToICS(firstDate) + 'T' + startTime;
+    const dtEnd     = dateToICS(firstDate) + 'T' + endTime;
+    const byday     = dayNameToICSDay(b.day);
+    const uid_str   = b.id + '@kumonbrookswood';
+
+    // Build EXDATE list for cancelled dates
+    let exdates = '';
+    if ((b.cancelledDates||[]).length) {
+      const exList = b.cancelledDates.map(iso => {
+        return iso.replace(/-/g,'') + 'T' + startTime;
+      }).join(',');
+      exdates = 'EXDATE;TZID=America/Vancouver:' + exList + '
+';
+    }
+
+    cal.push(
+      'BEGIN:VEVENT',
+      'UID:' + uid_str,
+      'DTSTAMP:' + now,
+      'DTSTART;TZID=America/Vancouver:' + dtStart,
+      'DTEND;TZID=America/Vancouver:' + dtEnd,
+      'RRULE:FREQ=WEEKLY;BYDAY=' + byday,
+      exdates.trim() ? exdates.trim() : null,
+      'SUMMARY:Kumon ' + subject + ' — ' + studentName,
+      'DESCRIPTION:Kumon Brookswood Centre\n' + subject + ' (' + classLabel(b.level) + ')\n' + duration + ' min session',
+      'LOCATION:4043 200 St\, Langley\, BC V3A 1K8',
+      'COLOR:CORNFLOWERBLUE',
+      'END:VEVENT'
+    ).filter(Boolean);
+  });
+
+  cal.push('END:VCALENDAR');
+  return cal.join('
+');
+}
+
+function downloadICS(icsContent, filename) {
+  const blob = new Blob([icsContent], {type: 'text/calendar;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function addBookingToCalendar(studentId, bookingIds) {
+  const st = S.user.students.find(s=>s.id===studentId);
+  if (!st) return;
+  const bookings = bookingIds
+    ? st.bookings.filter(b => bookingIds.includes(b.id))
+    : st.bookings;
+  if (!bookings.length) return;
+  const ics = generateICS(bookings, st.firstName+' '+st.lastName, st.subject, slotDur(st.level));
+  downloadICS(ics, 'kumon-'+st.firstName.toLowerCase()+'-sessions.ics');
+}
+
+function addAllToCalendar() {
+  const allBookings = [];
+  const allInfo = [];
+  (S.user.students||[]).forEach(st => {
+    (st.bookings||[]).forEach(b => {
+      allBookings.push(b);
+      allInfo.push({st, b});
+    });
+  });
+  if (!allBookings.length) return;
+  // Group by student since duration may differ
+  const byStudent = {};
+  allInfo.forEach(({st,b}) => {
+    if (!byStudent[st.id]) byStudent[st.id] = {st, bookings:[]};
+    byStudent[st.id].bookings.push(b);
+  });
+  // Merge all into one ICS
+  let combined = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Kumon Brookswood//Booking Portal//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'X-WR-CALNAME:Kumon Brookswood Sessions'
+  ];
+  Object.values(byStudent).forEach(({st, bookings}) => {
+    const suffix = (day) => SCHEDULE[day]?.suffix || 'PM';
+    const dur = slotDur(st.level);
+    const now = new Date().toISOString().replace(/[-:]/g,'').slice(0,15)+'Z';
+    bookings.forEach(b => {
+      const startTime = timeToICS(b.time, suffix(b.day));
+      const endTime   = addMinsToICSTime(startTime, dur);
+      const firstDate = nextOccurrence(b.day);
+      const dtStart   = dateToICS(firstDate) + 'T' + startTime;
+      const dtEnd     = dateToICS(firstDate) + 'T' + endTime;
+      let exdates = '';
+      if ((b.cancelledDates||[]).length) {
+        exdates = 'EXDATE;TZID=America/Vancouver:' + b.cancelledDates.map(iso=>iso.replace(/-/g,'')+'T'+startTime).join(',');
+      }
+      combined.push(
+        'BEGIN:VEVENT',
+        'UID:'+b.id+'@kumonbrookswood',
+        'DTSTAMP:'+now,
+        'DTSTART;TZID=America/Vancouver:'+dtStart,
+        'DTEND;TZID=America/Vancouver:'+dtEnd,
+        'RRULE:FREQ=WEEKLY;BYDAY='+dayNameToICSDay(b.day),
+        ...(exdates ? [exdates] : []),
+        'SUMMARY:Kumon '+st.subject+' — '+st.firstName,
+        'DESCRIPTION:Kumon Brookswood Centre\n'+st.subject+' ('+classLabel(b.level)+')\n'+dur+' min session',
+        'LOCATION:4043 200 St\, Langley\, BC V3A 1K8',
+        'END:VEVENT'
+      );
+    });
+  });
+  combined.push('END:VCALENDAR');
+  downloadICS(combined.join('
+'), 'kumon-all-sessions.ics');
 }
 
 /* ── Event wiring ── */
